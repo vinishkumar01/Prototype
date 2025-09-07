@@ -1,0 +1,31 @@
+# ========== Unity ==========
+[Ll]ibrary/
+[Tt]emp/
+[Oo]bj/
+[Bb]uild/
+[Bb]uilds/
+[Ll]ogs/
+[Mm]emoryCaptures/
+UserSettings/
+
+# Crashlytics / Unity Cache server
+.cache/
+
+# ========== OS / IDE ==========
+*.swp
+*.lock
+*.DS_Store
+Thumbs.db
+
+# Visual Studio / Rider / MonoDevelop
+.vs/
+*.sln
+*.user
+*.userprefs
+*.csproj
+*.unityproj
+*.pidb
+*.booproj
+*.db
+*.opendb
+
