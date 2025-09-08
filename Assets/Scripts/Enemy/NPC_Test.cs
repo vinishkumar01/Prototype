@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Net;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using Unity.VisualScripting;
 using UnityEditor.Timeline;
@@ -19,6 +20,7 @@ public class NPC_Test : MonoBehaviour, IHittable
     [SerializeField] Rigidbody2D rb;
     [SerializeField] Collider2D NPCcollider;
     [SerializeField] List<Node> AllNodesinTheScene = new List<Node>();
+    [SerializeField] Animator ChaserAnimator;
 
     [Header("Movement / Pathing")]
     [SerializeField] int Movespeed = 5;
@@ -30,15 +32,16 @@ public class NPC_Test : MonoBehaviour, IHittable
     [SerializeField] bool debugLogs = false;
     [SerializeField] List<Node> path = new List<Node>();
     [SerializeField] Vector3 lastPlayerPos;
-    bool isGrounded;
+    [SerializeField] bool isGrounded;
 
 
     private void Start()
     {
         //RigidBody
-        rb = GetComponent<Rigidbody2D>();
+        rb = GetComponentInParent<Rigidbody2D>();
         NPCcollider = GetComponent<Collider2D>();
-        Sprite = GetComponentInChildren<Transform>();
+        Sprite = GetComponent<Transform>();
+        ChaserAnimator = GetComponentInChildren<Animator>();
 
         if(AStarManager.instance != null)
         {
@@ -49,13 +52,13 @@ public class NPC_Test : MonoBehaviour, IHittable
         currentNode = GetNearestNode(transform.position);
         lastPlayerPos = player.position;
 
-        StartCoroutine(PathUpdater());
         //StartCoroutine(FollowPlayer());
     }
 
     void Update()
     {
-        isGrounded = Physics2D.Raycast(transform.position, Vector2.down, 1.1f, LayerMask.GetMask("Platform"));
+        isGrounded = Physics2D.Raycast(transform.position, Vector2.down, 1.5f, LayerMask.GetMask("Platform"));
+        Debug.DrawLine(transform.position, transform.position + Vector3.down * 1.5f, isGrounded?Color.green:Color.red);
     }
 
     private void FixedUpdate()
@@ -141,8 +144,10 @@ public class NPC_Test : MonoBehaviour, IHittable
         if (path.Count == 0 || path == null)
         {
             rb.velocity = new Vector2(0f, rb.velocity.y);
+            ChaserAnimator.SetBool("isNotMoving", true);
             return;
         }
+        ChaserAnimator.SetBool("isNotMoving", false);
 
 
         Node targetNode = path[0];
@@ -189,7 +194,7 @@ public class NPC_Test : MonoBehaviour, IHittable
             //Clamp minimum jump height to 1 tile
             float minJumpHeight = 3.0f;
 
-            if (dy > 0.2f)
+            if (dy > 0.4f)
             {
                 float jumpHeight = Mathf.Max(dy, minJumpHeight);
 
@@ -292,4 +297,12 @@ public class NPC_Test : MonoBehaviour, IHittable
         }
     }
 
+
+    private void OnTriggerEnter2D(Collider2D collision)
+    {
+        if(collision.tag == "Player")
+        {
+            StartCoroutine(PathUpdater());
+        }
+    }
 }
