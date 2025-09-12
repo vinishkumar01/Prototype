@@ -21,7 +21,9 @@ public class NPC_Test : MonoBehaviour, IHittable
     [SerializeField] Collider2D NPCcollider;
     [SerializeField] List<Node> AllNodesinTheScene = new List<Node>();
     [SerializeField] Animator ChaserAnimator;
-
+    [SerializeField] Vector3 FacingDirection;
+    [SerializeField] bool isFacingRight = true;
+ 
     [Header("Movement / Pathing")]
     [SerializeField] int Movespeed = 5;
     [SerializeField] float pathCheckInterval = 0.5f;
@@ -33,6 +35,7 @@ public class NPC_Test : MonoBehaviour, IHittable
     [SerializeField] List<Node> path = new List<Node>();
     [SerializeField] Vector3 lastPlayerPos;
     [SerializeField] bool isGrounded;
+    [SerializeField] bool DirectionChanged;
 
 
     private void Start()
@@ -42,6 +45,7 @@ public class NPC_Test : MonoBehaviour, IHittable
         NPCcollider = GetComponent<Collider2D>();
         Sprite = GetComponent<Transform>();
         ChaserAnimator = GetComponentInChildren<Animator>();
+        FacingDirection = transform.localScale;
 
         if(AStarManager.instance != null)
         {
@@ -52,7 +56,7 @@ public class NPC_Test : MonoBehaviour, IHittable
         currentNode = GetNearestNode(transform.position);
         lastPlayerPos = player.position;
 
-        //StartCoroutine(FollowPlayer());
+        StartCoroutine(PathUpdater());
     }
 
     void Update()
@@ -63,7 +67,17 @@ public class NPC_Test : MonoBehaviour, IHittable
 
     private void FixedUpdate()
     {
-        FollowPlayer();
+        if(path.Count > 0)
+        {
+            FollowPlayer();
+        }
+        else
+        {
+            ChaserAnimator.SetFloat("Speed",0f);
+            ChaserAnimator.SetBool("IsStartedMoving", false);
+            ChaserAnimator.SetBool("IsStopping", true);
+        }
+        
     }
 
     private void LateUpdate()
@@ -144,10 +158,8 @@ public class NPC_Test : MonoBehaviour, IHittable
         if (path.Count == 0 || path == null)
         {
             rb.velocity = new Vector2(0f, rb.velocity.y);
-            ChaserAnimator.SetBool("isNotMoving", true);
             return;
         }
-        ChaserAnimator.SetBool("isNotMoving", false);
 
 
         Node targetNode = path[0];
@@ -171,20 +183,45 @@ public class NPC_Test : MonoBehaviour, IHittable
         float vertThreshold = Mathf.Max(extY * 1.2f, 0.5f); // allow some Y tolerance
 
         float direction = Mathf.Sign(targetPos.x - transform.position.x);
-        if (Mathf.Approximately(direction, 0f))
+        if (Mathf.Approximately(direction, 0f) || path.Count == 0)
         {
             rb.velocity = new Vector2(0f, rb.velocity.y);
         }
         else
         {
             //Horizontal Movement
-            rb.AddForce(new Vector2(direction * Movespeed, rb.velocity.y));
+            rb.AddForce(new Vector2(direction * Movespeed,rb.velocity.y));
         }
 
+        float XDifference = targetPos.x - transform.position.x;
+
+        bool isMoving = Mathf.Abs(XDifference) > 0.1f;
+
+        ChaserAnimator.SetFloat("Speed", isMoving ? 1f : 0f);
+
+        ChaserAnimator.SetBool("IsStartedMoving", isMoving);
+
+        ChaserAnimator.SetBool("IsStopping", !isMoving);
+
+        ChaserAnimator.SetBool("isFalling", rb.velocity.y < 0f); //Vertical
+
+        if (isGrounded)
+        {
+            if (direction > 0 && !isFacingRight)
+            {
+                isFacingRight = true;
+                transform.localScale = FacingDirection;
+            }
+            else if(direction < 0 && isFacingRight)
+            {
+                isFacingRight = false;
+                transform.localScale = new Vector2(-FacingDirection.x, FacingDirection.y);
+            }
+        }
 
         //jump Logic:
-        
-        if(isGrounded)
+
+        if (isGrounded)
         {
             float dx = targetPos.x - transform.position.x;
             float dy = targetPos.y - transform.position.y;
@@ -196,6 +233,7 @@ public class NPC_Test : MonoBehaviour, IHittable
 
             if (dy > 0.4f)
             {
+
                 float jumpHeight = Mathf.Max(dy, minJumpHeight);
 
                 //calculate minimum vertical velocity needed to reach by
@@ -209,8 +247,10 @@ public class NPC_Test : MonoBehaviour, IHittable
                 //Apply Jump with calculated trajectory
                 rb.velocity = new Vector2(requiredVX, requiredVy);
             }
-            else if(Mathf.Abs(dy) < 0.2f && Mathf.Abs(dx) > 2f) // Jump across gaps
+            else if (Mathf.Abs(dy) < 0.2f && Mathf.Abs(dx) > 2f) // Jump across gaps
             {
+                ChaserAnimator.SetTrigger("Jump");
+
                 float jumpHeight = minJumpHeight;
 
                 //calculate minimum vertical velocity needed to reach by
@@ -224,8 +264,19 @@ public class NPC_Test : MonoBehaviour, IHittable
                 //Apply Jump with calculated trajectory
                 rb.velocity = new Vector2(requiredVX, requiredVy);
             }
+            else
+            {
+                ChaserAnimator.SetBool("isFalling", true);
+            }
+
         }
-        
+        else
+        {
+            // While in air but not moving upward, check if falling
+            if (rb.velocity.y < -0.1f)
+                ChaserAnimator.SetBool("isFalling", true); // falling handled by isFalling param
+        }
+
         // Near Node check 
         bool closeEnoughX = Mathf.Abs(transform.position.x - targetPos.x) <= horizThreshold;
         bool closeEnoughY = Mathf.Abs(transform.position.y - targetPos.y) <= (vertThreshold * 2f);
@@ -298,11 +349,15 @@ public class NPC_Test : MonoBehaviour, IHittable
     }
 
 
-    private void OnTriggerEnter2D(Collider2D collision)
-    {
-        if(collision.tag == "Player")
-        {
-            StartCoroutine(PathUpdater());
-        }
-    }
+    //private void OnTriggerEnter2D(Collider2D collision)
+    //{
+    //    if (collision.tag == "Player")
+    //    {
+    //        StartCoroutine(PathUpdater());
+    //    }
+    //    else
+    //    {
+    //        StopAllCoroutines();
+    //    }
+    //}
 }
