@@ -20,7 +20,7 @@ public class NPC_Test : MonoBehaviour, IHittable
     [SerializeField] Collider2D NPCcollider;
     [SerializeField] List<Node> AllNodesinTheScene = new List<Node>();
 
-    [SerializeField] Animator ChaserAnimator;
+    //[SerializeField] Animator ChaserAnimator;
     [SerializeField] Vector3 FacingDirection;
     //[SerializeField] bool isFacingRight = true;
     [SerializeField] LayerMask platformLayer;

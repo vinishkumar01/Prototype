@@ -6,6 +6,8 @@ using UnityEngine.Pool;
 
 public class PoolManager : MonoBehaviour
 {
+    public static PoolManager instance;
+
     [SerializeField] bool _addtoDontDestroyOnLoad = false;
 
     // Empty GameObject Holders to make the Heirarchy clean
@@ -32,6 +34,8 @@ public class PoolManager : MonoBehaviour
 
     private void Awake()
     {
+        instance = this;
+
         //Initializing the Dictionary Here
         _objectPools = new Dictionary<GameObject, ObjectPool<GameObject>>();
         _cloneToPrefabMap = new Dictionary<GameObject, GameObject>();   

@@ -34,16 +34,16 @@ public class GenerateNodes : MonoBehaviour
     {
         instance = this;
 
+        
+    }
+
+    private void Start()
+    {
         generatingNodes();
         DebugLinesForNodeToNodesWeHaveGenerated();
 
         //Passing Event
         OnNodesGenerated?.Invoke();
-    }
-
-    private void Start()
-    {
-        
     }
 
     void generatingNodes()
@@ -65,6 +65,8 @@ public class GenerateNodes : MonoBehaviour
                     if (!platformTM.HasTile(aboveCell))
                     {
                         Vector3 worldPos = platformTM.GetCellCenterWorld(aboveCell);
+                        Debug.Log("NodePrefab: " + NodePrefab);
+                        Debug.Log("PoolManager.instance: " + PoolManager.instance);
                         Node node = PoolManager.SpawnObject(NodePrefab, worldPos, Quaternion.identity, PoolManager.PoolType.Nodes);
 
                         //Adding Nodes to the list so that the connections can be done automatically
