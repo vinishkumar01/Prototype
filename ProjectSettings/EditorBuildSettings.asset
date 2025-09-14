@@ -18,9 +18,9 @@ EditorBuildSettings:
     path: Assets/Scenes/Weapon_Testing.unity
     guid: 6b3266ca6e94665408fc05df5230a205
   - enabled: 1
-    path: Assets/Scenes/Test Area.unity
-    guid: 2cda990e2423bbf4892e6590ba056729
-  - enabled: 1
     path: Assets/Scenes/Loading Screen.unity
     guid: 3045a44d4339e3343903fb7d47578aa3
+  - enabled: 1
+    path: Assets/Scenes/Test_Area.unity
+    guid: 7187aa671ad532a429c835fa95e1bd46
   m_configObjects: {}
