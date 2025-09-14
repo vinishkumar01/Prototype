@@ -20,7 +20,7 @@ public class GrapplingGunConfig : MonoBehaviour
     public Vector2 grappleDistanceVector;
 
     [Header("Physics Reference")]
-    [SerializeField] SpringJoint2D _springJoint2D;
+    [SerializeField] public SpringJoint2D _springJoint2D;
 
     [Header("Layer Reference")]
     [SerializeField] int grappleLayerNumber = 6;
@@ -102,10 +102,14 @@ public class GrapplingGunConfig : MonoBehaviour
         Vector2 distanceVector = Camera.main.ScreenToWorldPoint(Input.mousePosition) - GunPivot.position;
 
         // We are drawing RayCast to the Mouse position from the firePoint when this happens if there is something between these two distance like (interactable layer to grapple) we will store the position maybe
-        RaycastHit2D hit = Physics2D.Raycast(firePoint.position, distanceVector.normalized);
+        Vector2 origin = firePoint.position;
+        Vector2 direction = distanceVector.normalized;
+        int mask = ~LayerMask.GetMask("BackGround");
+        RaycastHit2D hit = Physics2D.Raycast(origin,direction, maxDistance, mask);
 
         if (hit)
         {
+            //Debug.Log("Hit: " + hit.collider.name);
             //Debug.Log("Hittt");
             if (hit.transform.gameObject.layer == grappleLayerNumber)
             {

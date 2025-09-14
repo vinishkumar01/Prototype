@@ -1,11 +1,14 @@
 using System.Collections;
 using System.Collections.Generic;
+using TMPro;
 using UnityEngine;
 
 public class PlayerController : MonoBehaviour
 {
     [Header("References")]
     public Rigidbody2D rb;
+    [SerializeField] Animator playerAnimator;
+    [SerializeField] TextMeshPro Dashtext;
 
     [Header("Gravity Configs")]
     [SerializeField]float gravityStrength; //Downwards force (gravity) needed for the desired jumpHeight and jumpTimeToApex.
@@ -70,6 +73,7 @@ public class PlayerController : MonoBehaviour
     private void Start()
     {
         rb = GetComponent<Rigidbody2D>();
+        playerAnimator = GetComponent<Animator>();
         
         //Getting the groundcheck gameObjects transform(position)
         GroundCheck = GameObject.Find("GC").GetComponent<Transform>();
@@ -227,6 +231,8 @@ public class PlayerController : MonoBehaviour
         float TargetVelocityX = MovementSpeed * MovementInputDirection.x;
 
         rb.velocity = new Vector2(Mathf.SmoothDamp(rb.velocity.x, TargetVelocityX, ref VelocityXSmoothing, (isGrounded)? accelerationtimeGrounded : accelerationtimeAirborne), rb.velocity.y);
+
+        playerAnimator.SetInteger("isPlayerMoving", Mathf.Abs((int)TargetVelocityX));
     }
 
     #endregion
@@ -263,12 +269,30 @@ public class PlayerController : MonoBehaviour
     {
         if(IsDashing)
         {
-            if(dashTimeLeft > 0)
+            Dashtext.text = " ";
+            if (dashTimeLeft > 0)
             {
                 rb.velocity = new Vector2(MovementInputDirection.x * DashSpeed, 0.0f);
+                playerAnimator.SetBool("isDashing", true);
                 dashTimeLeft -= Time.deltaTime;
-
             }
+            else
+            {
+                IsDashing = false;
+                playerAnimator.SetBool("isDashing", false);
+            }
+        }
+        else
+        {
+            if(Time.time <= (lastDash + DashCoolDown))
+            {
+                Dashtext.text = "Dash Reacharging";
+            }
+            else
+            {
+                Dashtext.text = " ";
+            }
+            
         }
     }
 

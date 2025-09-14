@@ -9,6 +9,10 @@ TagManager:
   - FirePoint
   - BulletInteractable
   - Enemy
+  - Player_Body
+  - PlayerBody
+  - Poll
+  - Bullet
   layers:
   - Default
   - TransparentFX
@@ -20,7 +24,7 @@ TagManager:
   - Rope
   - Player and Enemy
   - BulletHittableLayer
-  - 
+  - BackGround
   - 
   - 
   - 
@@ -45,6 +49,9 @@ TagManager:
   m_SortingLayers:
   - name: Default
     uniqueID: 0
+    locked: 0
+  - name: BackGround
+    uniqueID: 3584213597
     locked: 0
   - name: Platform
     uniqueID: 3789097069

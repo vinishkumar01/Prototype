@@ -12,12 +12,16 @@ public class BulletTracer : MonoBehaviour
 
     [SerializeField] float _speed = 80f;
     [SerializeField] float _trialLife = 0.1f;
+    [SerializeField] GameObject Bullet_Collision;
+    [SerializeField] bool hasHit = false;
+
+    RaycastHit2D storedHit;
 
     void Start()
     {
     }
 
-    public void initialize(Vector3 startPosition, Vector3 targetPosition)
+    public void initialize(Vector3 startPosition, Vector3 targetPosition, RaycastHit2D hit)
     {
         _startposition = new Vector3(startPosition.x, startPosition.y, -1);
         _targetposition = new Vector3(targetPosition.x, targetPosition.y, -1);
@@ -25,6 +29,9 @@ public class BulletTracer : MonoBehaviour
 
         progress = 0f;
         transform.position = _startposition;
+
+        storedHit = hit;
+        hasHit = false;
     }
 
     void Update()
@@ -32,8 +39,21 @@ public class BulletTracer : MonoBehaviour
         progress += (_speed * Time.deltaTime) / _distance;
         transform.position = Vector3.Lerp(_startposition, _targetposition, progress);
 
-        if(progress >= 1f)
+        if(progress >= 1f && !hasHit)
         {
+            hasHit = true;
+            if(storedHit.collider != null)
+            {
+                GameObject impact = PoolManager.SpawnObject(Bullet_Collision, _targetposition, Quaternion.identity, PoolManager.PoolType.ParticleSystem);
+                StartCoroutine(ReturnAfterSeconds(impact, 1f));
+
+                var hittable = storedHit.collider.GetComponent<IHittable>();
+                if (hittable != null)
+                {
+                    hittable.RecieveHit(storedHit);
+                }
+            }
+
             //StopAllCoroutines();
             StartCoroutine(DisableAfterTrail());
         }
@@ -49,5 +69,11 @@ public class BulletTracer : MonoBehaviour
     {
         yield return new WaitForSeconds(_trialLife + 0.1f);
         PoolManager.ReturnObjectToPool(gameObject);
+    }
+
+    IEnumerator ReturnAfterSeconds(GameObject obj, float time)
+    {
+        yield return new WaitForSeconds(time);
+        PoolManager.ReturnObjectToPool(obj, PoolManager.PoolType.ParticleSystem);
     }
 }

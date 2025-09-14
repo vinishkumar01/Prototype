@@ -1,7 +1,9 @@
 using System.Collections;
 using System.Collections.Generic;
+using TMPro;
 using UnityEditor.Experimental.GraphView;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class WeaponBehaviour : MonoBehaviour
 {
@@ -9,6 +11,9 @@ public class WeaponBehaviour : MonoBehaviour
     [SerializeField] Transform GunBarrel;
     [SerializeField] GameObject bulletTrail;
     [SerializeField] LayerMask hitLayer;
+    [SerializeField] TextMeshProUGUI ModeText;
+    [SerializeField] TextMeshProUGUI BulletCountText;
+    [SerializeField] TextMeshPro ReloadText;
 
     [Header("Weapon Stats")]
     [SerializeField] int MagSize;
@@ -34,6 +39,7 @@ public class WeaponBehaviour : MonoBehaviour
     private void Start()
     {
         BulletsLeft = MagSize;
+        BulletCountText.text = BulletsLeft.ToString();
         CanShoot = true;
         AutoReload = true;
     }
@@ -47,13 +53,19 @@ public class WeaponBehaviour : MonoBehaviour
         switch (fireMode)
         {
             case FireMode.FullAuto:
+                if (ModeText != null)
+                    ModeText.text = "FULL AUTO";
                 StartCoroutine(FireAuto());
                 break;
             case FireMode.SemiAuto:
+                if(ModeText != null)
+                    ModeText.text = "SEMI-AUTO";
                 ShootOnce();
                 CanShoot = false;
                 break;
             case FireMode.Burst:
+                if (ModeText != null)
+                    ModeText.text = "BURST";
                 StartCoroutine(FireBurst());
                 break;
         }
@@ -124,21 +136,16 @@ public class WeaponBehaviour : MonoBehaviour
 
         if (RayHit.collider)
         {
-            trailScript.initialize(origin, RayHit.point);
-
-            var hittable = RayHit.collider.GetComponent<IHittable>();
-            if (hittable != null)
-            {
-                hittable.RecieveHit(RayHit);
-            }
+            trailScript.initialize(origin, RayHit.point, RayHit);
         }
         else
         {
             var endPosition = origin + TargetDirection * BulletRange;
-            trailScript.initialize(origin, endPosition);
+            trailScript.initialize(origin, endPosition, new RaycastHit2D());
         }
 
         BulletsLeft--;
+        BulletCountText.text = BulletsLeft.ToString();
         //Debug.Log("Bullets Decrementing while shooting: " + BulletsLeft);
 
     }
@@ -146,11 +153,12 @@ public class WeaponBehaviour : MonoBehaviour
     public IEnumerator Reload()
     {
         isReloading = true;
-
+        ReloadText.text = "RELOADING";
         yield return new WaitForSeconds(ReloadTime);
         BulletsLeft = MagSize;
         //Debug.Log("Bullets Reloaded: " + BulletsLeft);
 
         isReloading = false;
+        ReloadText.text = " ";
     }
 }

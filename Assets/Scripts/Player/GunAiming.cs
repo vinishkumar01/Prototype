@@ -1,8 +1,11 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using Unity.VisualScripting;
+using UnityEditor;
 using UnityEngine;
 using UnityEngine.Experimental.AI;
+using UnityEngine.UI;
 
 public class GunAiming : MonoBehaviour
 {
@@ -10,6 +13,10 @@ public class GunAiming : MonoBehaviour
     GrapplingGunConfig grappleGun;
     GrappleRopeConfigs grappleRope;
     WeaponBehaviour weaponBehave;
+
+    [Header("Weapon UI")]
+    [SerializeField] RectTransform RectImage;
+    [SerializeField] RectTransform[] weaponImage;
     
 
     public enum WeaponType
@@ -45,11 +52,17 @@ public class GunAiming : MonoBehaviour
     {
         GunStartingPos = GunPivot.localScale;
         Player = GameObject.FindGameObjectWithTag("Player").GetComponent<Transform>();
+
+        if(!grappleGun.enabled)
+        {
+            grappleGun._springJoint2D.enabled = false;
+        }
     }
 
     private void Update()
     {
         GunPivot.transform.position = Player.transform.position;
+        
         WeaponSelection();
         
         if(weaponType == WeaponType.Pistol)
@@ -94,27 +107,32 @@ public class GunAiming : MonoBehaviour
 
     void WeaponSelection()
     {
-
-        if(Input.GetAxis("Mouse ScrollWheel") > 0f) //Scroll Up
+        if (weaponImage != null && RectImage != null)
         {
-            weaponType++;
-
-            if((int)weaponType >= System.Enum.GetValues(typeof(WeaponType)).Length)
+            if (Input.GetAxis("Mouse ScrollWheel") > 0f) //Scroll Up
             {
-                weaponType = 0;
+                weaponType++;
+
+                if ((int)weaponType >= System.Enum.GetValues(typeof(WeaponType)).Length)
+                {
+                    weaponType = 0;
+                }
+                UpdateWeaponUI();
+            }
+            else if (Input.GetAxis("Mouse ScrollWheel") < 0f) //Scroll Down
+            {
+                weaponType--;
+
+                if ((int)weaponType < 0)
+                {
+                    weaponType = (WeaponType)System.Enum.GetValues(typeof(WeaponType)).Length - 1;
+                }
+                UpdateWeaponUI();
             }
         }
-        else if (Input.GetAxis("Mouse ScrollWheel") < 0f) //Scroll Down
-        {
-            weaponType--;
+            
 
-            if ((int)weaponType < 0)
-            {
-                weaponType = (WeaponType)System.Enum.GetValues(typeof(WeaponType)).Length - 1;
-            }
-        }
-
-        else if(weaponType == WeaponType.Pistol)
+        if(weaponType == WeaponType.Pistol)
         {
             Vector3 MousePos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
             GunAim(MousePos, true);
@@ -127,7 +145,10 @@ public class GunAiming : MonoBehaviour
 
         //Debug.Log("CurrentWeapon: " + weaponType);
 
-        WeaponsType();
+        if(grappleGun.enabled && weaponBehave.enabled)
+        {
+            WeaponsType();
+        }
     }
 
     void Pistol()
@@ -144,24 +165,33 @@ public class GunAiming : MonoBehaviour
 
     void rifle()
     {
-        if(Input.GetKeyDown(KeyCode.Mouse0))
+        if(weaponBehave != null && weaponBehave.enabled)
         {
-            weaponBehave.StartFiring();
-        }
-        else if (Input.GetKeyUp(KeyCode.Mouse0))
-        {
-            weaponBehave.StopFiring();
-        }
-        if(Input.GetKeyDown(KeyCode.F))
-        {
-            weaponBehave.fireMode++;
-            Debug.Log(weaponBehave.fireMode);
-
-            if((int)weaponBehave.fireMode >=3)
+            if (Input.GetKeyDown(KeyCode.Mouse0))
             {
-                weaponBehave.fireMode = 0;
+                weaponBehave.StartFiring();
+            }
+            else if (Input.GetKeyUp(KeyCode.Mouse0))
+            {
+                weaponBehave.StopFiring();
+            }
+            if (Input.GetKeyDown(KeyCode.F))
+            {
+                weaponBehave.fireMode++;
+                Debug.Log(weaponBehave.fireMode);
+
+                if ((int)weaponBehave.fireMode >= 3)
+                {
+                    weaponBehave.fireMode = 0;
+                }
             }
         }
+        
     }
-    
+
+    void UpdateWeaponUI()
+    {
+        RectImage.position = weaponImage[(int)weaponType].position;
+    }
+
 }
