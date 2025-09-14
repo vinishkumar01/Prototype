@@ -22,7 +22,7 @@ public class NPC_Test : MonoBehaviour, IHittable
 
     [SerializeField] Animator ChaserAnimator;
     [SerializeField] Vector3 FacingDirection;
-    [SerializeField] bool isFacingRight = true;
+    //[SerializeField] bool isFacingRight = true;
     [SerializeField] LayerMask platformLayer;
  
 
