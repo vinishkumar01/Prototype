@@ -19,15 +19,13 @@ public class NPC_Test : MonoBehaviour, IHittable
     [SerializeField] Rigidbody2D rb;
     [SerializeField] Collider2D NPCcollider;
     [SerializeField] List<Node> AllNodesinTheScene = new List<Node>();
-<<<<<<< Updated upstream
 
-=======
     [SerializeField] Animator ChaserAnimator;
     [SerializeField] Vector3 FacingDirection;
     [SerializeField] bool isFacingRight = true;
     [SerializeField] LayerMask platformLayer;
  
->>>>>>> Stashed changes
+
     [Header("Movement / Pathing")]
     [SerializeField] int Movespeed = 5;
     [SerializeField] float pathCheckInterval = 0.5f;
@@ -199,12 +197,8 @@ public class NPC_Test : MonoBehaviour, IHittable
 
             if (dy > 0.2f)
             {
-<<<<<<< Updated upstream
-                float jumpHeight = Mathf.Max(dy, minJumpHeight);
-=======
 
-                float jumpHeight = Mathf.Max(minJumpHeight, dy);
->>>>>>> Stashed changes
+                float jumpHeight = Mathf.Max(dy, minJumpHeight);
 
                 //calculate minimum vertical velocity needed to reach by
                 float requiredVy = Mathf.Sqrt(2 * gravity * jumpHeight); //margin 
