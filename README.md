@@ -1,4 +1,4 @@
-# Prototype Game
+# Game Prototype
 
 ##Demo
 
