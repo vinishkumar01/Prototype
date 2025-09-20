@@ -29,21 +29,26 @@ public class GenerateNodes : MonoBehaviour
     [SerializeField] float maxFallHeight = 10.0f;
     [SerializeField] float maxFallDistance = 7.0f;
 
+    [Header("Node Count Var")]
+    int walkableNodeCount = 0;
+    int REdgeNodeCount = 0;
+    int LEdgeNodeCount = 0;
     
     private void Awake()
     {
         instance = this;
 
-        
-    }
-
-    private void Start()
-    {
         generatingNodes();
         DebugLinesForNodeToNodesWeHaveGenerated();
 
         //Passing Event
         OnNodesGenerated?.Invoke();
+        
+    }
+
+    private void Start()
+    {
+        
     }
 
     void generatingNodes()
@@ -65,10 +70,9 @@ public class GenerateNodes : MonoBehaviour
                     if (!platformTM.HasTile(aboveCell))
                     {
                         Vector3 worldPos = platformTM.GetCellCenterWorld(aboveCell);
-                        Debug.Log("NodePrefab: " + NodePrefab);
-                        Debug.Log("PoolManager.instance: " + PoolManager.instance);
                         Node node = PoolManager.SpawnObject(NodePrefab, worldPos, Quaternion.identity, PoolManager.PoolType.Nodes);
-
+                        node.name = "WalkableNode " + "_ " + walkableNodeCount.ToString();
+                        walkableNodeCount++;
                         //Adding Nodes to the list so that the connections can be done automatically
                         nodeList.Add(node);
 
@@ -79,6 +83,8 @@ public class GenerateNodes : MonoBehaviour
                         {
                             Vector3 rightPos = platformTM.GetCellCenterWorld(aboveCell) + new Vector3(1f, 0, 0);
                             Node RightNode = PoolManager.SpawnObject(NodePrefab, rightPos, Quaternion.identity, PoolManager.PoolType.Nodes);
+                            RightNode.name = "RightEdgeNode " + "_ " + REdgeNodeCount.ToString();
+                            REdgeNodeCount++;
                             EdgeNodes.Add(RightNode);
                         }
 
@@ -86,6 +92,8 @@ public class GenerateNodes : MonoBehaviour
                         {
                             Vector3 leftPos = platformTM.GetCellCenterWorld(aboveCell) + new Vector3(-1f, 0, 0);
                             Node LeftNode = PoolManager.SpawnObject(NodePrefab, leftPos, Quaternion.identity, PoolManager.PoolType.Nodes);
+                            LeftNode.name = "LeftEdgeNode " + "_ " + LEdgeNodeCount.ToString();
+                            LEdgeNodeCount++;
                             EdgeNodes.Add(LeftNode);
                         }
                     }

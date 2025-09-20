@@ -24,13 +24,10 @@ public class NPC_Test : MonoBehaviour, IHittable
     [Header("Movement / Pathing")]
     [SerializeField] int Movespeed = 5;
     [SerializeField] float pathCheckInterval = 0.5f;
-    [SerializeField] float extendThreshold = 1f;  //When to append More Node
-   // [SerializeField] float reachThreshold = 0.2f;    // small snap distance (world units)
 
     [Header("Debug")]
     [SerializeField] bool debugLogs = false;
     [SerializeField] List<Node> path = new List<Node>();
-    [SerializeField] Vector3 lastPlayerPos;
     bool isGrounded;
 
 
@@ -48,10 +45,10 @@ public class NPC_Test : MonoBehaviour, IHittable
         Debug.Log("All Nodes"+AllNodesinTheScene.Count);
 
         currentNode = GetNearestNode(transform.position);
-        lastPlayerPos = player.position;
 
         StartCoroutine(PathUpdater());
-        //StartCoroutine(FollowPlayer());
+
+        FacingDirection = transform.localScale;
     }
 
     void Update()
@@ -82,41 +79,21 @@ public class NPC_Test : MonoBehaviour, IHittable
         {
             Node playerNode = GetNearestNode(player.position);
 
+            //if (playerNode != null)
+            //{
+            //    if(debugLogs) Debug.Log($"PlayerPosition: {player.position} | Nearest node: {playerNode.name} at {playerNode.transform.position}");
+            //}
+
             if (currentNode != null && playerNode != null)
             {
-
-                var newPath = AStarManager.instance.GeneratePath(currentNode, playerNode);
+               // Debug.Log(currentNode+"_-_"+playerNode);
+                 var newPath = AStarManager.instance.GeneratePath(currentNode, playerNode);
                 if (newPath != null && newPath.Count > 0)
                 {
                     path.Clear();
                     path.AddRange(newPath);
                     if (debugLogs) Debug.Log($"PathUpdater: Rebuilt path to predicted node ({path.Count})");
                 }
-            }
-            else
-            {
-                Node last = path[path.Count - 1];
-                float sqr = (last.transform.position - playerNode.transform.position).sqrMagnitude;
-
-                if (sqr > extendThreshold * extendThreshold)
-                {
-                    var extraNodes = AStarManager.instance.GeneratePath(last, playerNode);
-
-                    if (extraNodes != null && extraNodes.Count > 0)
-                    {
-                        //avoid duplication
-                        if (path[path.Count - 1] == extraNodes[0])
-                        {
-                            extraNodes.RemoveAt(0);
-                        }
-                        if (extraNodes.Count > 0)
-                        {
-                            path.AddRange(extraNodes);
-                            if (debugLogs) Debug.Log($"Path extended: +{extraNodes.Count}, total {path.Count}");
-                        }
-                    }
-                }
-
             }
             //If NPC is stuck we are forcing to create a new path
             if(path.Count > 0)
@@ -178,9 +155,19 @@ public class NPC_Test : MonoBehaviour, IHittable
         }
 
 
+        //Flip the Character
+        if (Mathf.Sign(direction) < 0)
+        {
+            transform.localScale = FacingDirection;
+        }
+        else
+        {
+            transform.localScale = new Vector2(-FacingDirection.x, FacingDirection.y);
+        }
+
         //jump Logic:
-        
-        if(isGrounded)
+
+        if (isGrounded)
         {
             float dx = targetPos.x - transform.position.x;
             float dy = targetPos.y - transform.position.y;
