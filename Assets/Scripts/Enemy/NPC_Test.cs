@@ -30,6 +30,8 @@ public class NPC_Test : MonoBehaviour, IHittable
     [SerializeField] List<Node> path = new List<Node>();
     bool isGrounded;
 
+    [Header("NPC health")]
+    [SerializeField] int NPCHealth = 100;
 
     private void Start()
     {
@@ -49,6 +51,8 @@ public class NPC_Test : MonoBehaviour, IHittable
         StartCoroutine(PathUpdater());
 
         FacingDirection = transform.localScale;
+
+        
     }
 
     void Update()
@@ -69,6 +73,13 @@ public class NPC_Test : MonoBehaviour, IHittable
     void IHittable.RecieveHit(RaycastHit2D RayHit)
     {
         Debug.Log("Got Hit: by Circle");
+        NPCHealth -= 10;
+        Debug.Log(NPCHealth);
+
+        if (NPCHealth == 0)
+        {
+            Destroy(gameObject);
+        }
     }
 
     IEnumerator PathUpdater()
