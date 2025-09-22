@@ -14,6 +14,7 @@ public class NPC_Test : MonoBehaviour, IHittable
     [SerializeField] Rigidbody2D rb;
     [SerializeField] Collider2D NPCcollider;
     [SerializeField] List<Node> AllNodesinTheScene = new List<Node>();
+    [SerializeField] ParticleSystem Dust;
 
     //[SerializeField] Animator ChaserAnimator;
     [SerializeField] Vector3 FacingDirection;
@@ -23,22 +24,28 @@ public class NPC_Test : MonoBehaviour, IHittable
 
     [Header("Movement / Pathing")]
     [SerializeField] int Movespeed = 5;
+    [SerializeField] List<Node> path = new List<Node>();
     [SerializeField] float pathCheckInterval = 0.5f;
 
     [Header("Debug")]
     [SerializeField] bool debugLogs = false;
-    [SerializeField] List<Node> path = new List<Node>();
     bool isGrounded;
+    bool wasGrounded = true;
+    bool isFlipping;
 
     [Header("NPC health")]
     [SerializeField] int NPCHealth = 100;
+
+    [Header("NPC Animations")]
+    [SerializeField] Animator Chaser_Animator;
 
     private void Start()
     {
         //RigidBody
         rb = GetComponent<Rigidbody2D>();
         NPCcollider = GetComponent<Collider2D>();
-        Sprite = GetComponentInChildren<Transform>();
+        Sprite = GetComponent<Transform>();
+        Chaser_Animator = GetComponent<Animator>();
 
         if(AStarManager.instance != null)
         {
@@ -58,6 +65,7 @@ public class NPC_Test : MonoBehaviour, IHittable
     void Update()
     {
         isGrounded = Physics2D.Raycast(transform.position, Vector2.down, 1.1f, LayerMask.GetMask("Platform"));
+        NPCAnimations();
     }
 
     private void FixedUpdate()
@@ -90,10 +98,10 @@ public class NPC_Test : MonoBehaviour, IHittable
         {
             Node playerNode = GetNearestNode(player.position);
 
-            //if (playerNode != null)
-            //{
-            //    if(debugLogs) Debug.Log($"PlayerPosition: {player.position} | Nearest node: {playerNode.name} at {playerNode.transform.position}");
-            //}
+            if (playerNode != null)
+            {
+                if (debugLogs) Debug.Log($"PlayerPosition: {player.position} | Nearest node: {playerNode.name} at {playerNode.transform.position}");
+            }
 
             if (currentNode != null && playerNode != null)
             {
@@ -112,7 +120,7 @@ public class NPC_Test : MonoBehaviour, IHittable
                 Node TargetNode = path[0];
                 Vector3 targetPos = TargetNode.transform.position;
 
-                bool stuckVertically = Mathf.Abs(transform.position.x - targetPos.x) < 0.5f && targetPos.y > transform.position.y + 0.5f && !isGrounded;
+                bool stuckVertically = Mathf.Abs(transform.position.x - targetPos.x) < 0.5f && targetPos.y > transform.position.y + 1f && !isGrounded;
 
                 if(stuckVertically)
                 {
@@ -165,15 +173,21 @@ public class NPC_Test : MonoBehaviour, IHittable
             rb.AddForce(new Vector2(direction * Movespeed, rb.velocity.y));
         }
 
-
         //Flip the Character
-        if (Mathf.Sign(direction) < 0)
+        if (Mathf.Sign(direction) > 0)
         {
             transform.localScale = FacingDirection;
+            isFlipping = true;
         }
         else
         {
             transform.localScale = new Vector2(-FacingDirection.x, FacingDirection.y);
+            isFlipping = true;
+        }
+        
+        if(isFlipping)
+        {
+            Dust.Play();
         }
 
         //jump Logic:
@@ -184,17 +198,20 @@ public class NPC_Test : MonoBehaviour, IHittable
             float dy = targetPos.y - transform.position.y;
 
             float gravity = Mathf.Abs(Physics2D.gravity.y * rb.gravityScale);
+            Debug.Log(gravity);
 
-            //Clamp minimum jump height to 1 tile
+            //Clamp minimum jump height to required number of tile
             float minJumpHeight = 3.0f;
+            float maxJumpHeight = 35f;
 
-            if (dy > 0.2f)
+            if ((dy > 1.5f || (Mathf.Abs(dy) < 0.2f && Mathf.Abs(dx) > 2f)) && isGrounded)
             {
 
-                float jumpHeight = Mathf.Max(dy, minJumpHeight);
+                float jumpHeight = Mathf.Max(minJumpHeight, dy);
 
                 //calculate minimum vertical velocity needed to reach by
                 float requiredVy = Mathf.Sqrt(2 * gravity * jumpHeight); //margin 
+                requiredVy = Mathf.Clamp(requiredVy, minJumpHeight * 1.5f, maxJumpHeight * 1.5f);
                 float flightTime = (2 * requiredVy) / gravity;// total Flight Time = (2 * vY) / g
 
                 // Horizontal velocity to cover dx in that time
@@ -203,21 +220,8 @@ public class NPC_Test : MonoBehaviour, IHittable
 
                 //Apply Jump with calculated trajectory
                 rb.velocity = new Vector2(requiredVX, requiredVy);
-            }
-            else if(Mathf.Abs(dy) < 0.2f && Mathf.Abs(dx) > 2f) // Jump across gaps
-            {
-                float jumpHeight = minJumpHeight;
-
-                //calculate minimum vertical velocity needed to reach by
-                float requiredVy = Mathf.Sqrt(2 * gravity * jumpHeight); //margin 
-                float flightTime = (2 * requiredVy) / gravity;// total Flight Time = (2 * vY) / g
-
-                // Horizontal velocity to cover dx in that time
-                float requiredVX = dx / flightTime;
-                requiredVX = Mathf.Clamp(requiredVX, -Movespeed * 1.5f, Movespeed * 1.5f);
-
-                //Apply Jump with calculated trajectory
-                rb.velocity = new Vector2(requiredVX, requiredVy);
+                Chaser_Animator.SetTrigger("Jump");
+                Dust.Play();
             }
         }
         
@@ -291,6 +295,33 @@ public class NPC_Test : MonoBehaviour, IHittable
             Gizmos.DrawLine(prev, n.transform.position);
             prev = n.transform.position;
         }
+    }
+
+    void NPCAnimations()
+    {
+        //NPC Move Animations
+        if (path.Count == 0)
+        {
+            Chaser_Animator.SetBool("IsStartedMoving", false);
+        }
+        else
+        {
+            Chaser_Animator.SetBool("IsStartedMoving", true);
+        }
+
+        if(!isGrounded)
+        {
+            Chaser_Animator.SetBool("inAir", true);
+        }
+        else
+        {
+            if (!wasGrounded)
+            {
+                Chaser_Animator.SetTrigger("Landed");
+            }
+            Chaser_Animator.SetBool("inAir", false);
+        }
+        wasGrounded = isGrounded;
     }
 
 }

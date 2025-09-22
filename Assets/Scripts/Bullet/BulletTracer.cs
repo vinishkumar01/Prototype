@@ -51,6 +51,7 @@ public class BulletTracer : MonoBehaviour
                 if (hittable != null)
                 {
                     hittable.RecieveHit(storedHit);
+                    StartCoroutine(DisableWhenHit());
                 }
             }
 
