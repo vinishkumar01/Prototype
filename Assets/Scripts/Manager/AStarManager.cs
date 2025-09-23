@@ -7,12 +7,14 @@ public class AStarManager : MonoBehaviour
    public static AStarManager instance;
 
    public List<Node> AllNodesInTheScene;
+   public List <Node> AllEdgeNodesInTheScene;
 
     private void Awake()
     {
         instance = this;
 
         if(AllNodesInTheScene == null) AllNodesInTheScene = new List<Node>();
+        if (AllEdgeNodesInTheScene == null) AllEdgeNodesInTheScene = new List<Node>();
     }
 
     private void OnEnable()
@@ -113,6 +115,7 @@ public class AStarManager : MonoBehaviour
     {
 
         AllNodesInTheScene = new List<Node>();
+        AllEdgeNodesInTheScene = new List<Node>();
 
         if (GenerateNodes.instance == null) return;
 
@@ -125,6 +128,11 @@ public class AStarManager : MonoBehaviour
             foreach (var n in GenerateNodes.instance.EdgeNodes)
                 if (!AllNodesInTheScene.Contains(n))
                     AllNodesInTheScene.Add(n);
+        }
+        //EdgeNode list
+        if(GenerateNodes.instance.EdgeNodes != null)
+        {
+            AllEdgeNodesInTheScene.AddRange(GenerateNodes.instance.EdgeNodes);
         }
     }
 }

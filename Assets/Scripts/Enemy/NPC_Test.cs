@@ -1,6 +1,8 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Security.Cryptography;
+using UnityEditor.Timeline;
 using UnityEngine;
 using static UnityEngine.EventSystems.EventTrigger;
 
@@ -14,6 +16,7 @@ public class NPC_Test : MonoBehaviour, IHittable
     [SerializeField] Rigidbody2D rb;
     [SerializeField] Collider2D NPCcollider;
     [SerializeField] List<Node> AllNodesinTheScene = new List<Node>();
+    [SerializeField] List<Node> AllEdgeNodesinTheScene = new List<Node>();
     [SerializeField] ParticleSystem Dust;
 
     //[SerializeField] Animator ChaserAnimator;
@@ -30,8 +33,9 @@ public class NPC_Test : MonoBehaviour, IHittable
     [Header("Debug")]
     [SerializeField] bool debugLogs = false;
     bool isGrounded;
+    bool noPlatformxMax;
+    bool noPlatformxMin;
     bool wasGrounded = true;
-    bool isFlipping;
 
     [Header("NPC health")]
     [SerializeField] int NPCHealth = 100;
@@ -41,30 +45,34 @@ public class NPC_Test : MonoBehaviour, IHittable
 
     private void Start()
     {
-        //RigidBody
+        //Getting all the required Components
         rb = GetComponent<Rigidbody2D>();
         NPCcollider = GetComponent<Collider2D>();
         Sprite = GetComponent<Transform>();
         Chaser_Animator = GetComponent<Animator>();
 
+        // Adding all the Nodes in the Scene to the list
         if(AStarManager.instance != null)
         {
             AllNodesinTheScene = AStarManager.instance.AllNodesInTheScene;
+            AllEdgeNodesinTheScene = AStarManager.instance.AllEdgeNodesInTheScene;
         }
         Debug.Log("All Nodes"+AllNodesinTheScene.Count);
+        Debug.Log("All Edge Nodes" + AllEdgeNodesinTheScene.Count);
 
+        //Getting the Current Node of the NPC
         currentNode = GetNearestNode(transform.position);
 
+        //Executing the Coroutine to create a path
         StartCoroutine(PathUpdater());
 
+        // Setting the default scale direction of the NPC
         FacingDirection = transform.localScale;
-
-        
     }
 
     void Update()
     {
-        isGrounded = Physics2D.Raycast(transform.position, Vector2.down, 1.1f, LayerMask.GetMask("Platform"));
+        groundedAndplatformCheck();
         NPCAnimations();
     }
 
@@ -82,7 +90,6 @@ public class NPC_Test : MonoBehaviour, IHittable
     {
         Debug.Log("Got Hit: by Circle");
         NPCHealth -= 10;
-        Debug.Log(NPCHealth);
 
         if (NPCHealth == 0)
         {
@@ -103,39 +110,43 @@ public class NPC_Test : MonoBehaviour, IHittable
                 if (debugLogs) Debug.Log($"PlayerPosition: {player.position} | Nearest node: {playerNode.name} at {playerNode.transform.position}");
             }
 
-            if (currentNode != null && playerNode != null)
+            //Checking if the player is near the NpC if yes then the nodes in the path is cleared and created a new path to the player 
+            float PlayerDist = Vector2.Distance(transform.position, player.position);
+
+            if(PlayerDist < 2f)
             {
-               // Debug.Log(currentNode+"_-_"+playerNode);
-                 var newPath = AStarManager.instance.GeneratePath(currentNode, playerNode);
-                if (newPath != null && newPath.Count > 0)
+                if(playerNode != null)
                 {
-                    path.Clear();
-                    path.AddRange(newPath);
-                    if (debugLogs) Debug.Log($"PathUpdater: Rebuilt path to predicted node ({path.Count})");
+                    var newPath = AStarManager.instance.GeneratePath(currentNode, playerNode);
+                    if (newPath != null && newPath.Count > 0)
+                    {
+                        path.Clear();
+                        path.AddRange(newPath);
+                        if (debugLogs) Debug.Log($"PathUpdater: Rebuilt path to predicted node ({path.Count})");
+                    }
                 }
             }
-            //If NPC is stuck we are forcing to create a new path
-            if(path.Count > 0)
+            else
             {
-                Node TargetNode = path[0];
-                Vector3 targetPos = TargetNode.transform.position;
-
-                bool stuckVertically = Mathf.Abs(transform.position.x - targetPos.x) < 0.5f && targetPos.y > transform.position.y + 1f && !isGrounded;
-
-                if(stuckVertically)
+                if (currentNode != null && playerNode != null)
                 {
-                    path = AStarManager.instance.GeneratePath(currentNode, playerNode);
+                    // Debug.Log(currentNode+"_-_"+playerNode);
+                    var newPath = AStarManager.instance.GeneratePath(currentNode, playerNode);
+                    if (newPath != null && newPath.Count > 0)
+                    {
+                        path.Clear();
+                        path.AddRange(newPath);
+                        if (debugLogs) Debug.Log($"PathUpdater: Rebuilt path to predicted node ({path.Count})");
+                    }
                 }
-
             }
-
             yield return wait;
         }
     }
 
     void FollowPlayer()
     {
-        if (path.Count == 0 || path == null)
+        if (path == null || path.Count == 0)
         {
             rb.velocity = new Vector2(0f, rb.velocity.y);
             return;
@@ -143,6 +154,7 @@ public class NPC_Test : MonoBehaviour, IHittable
 
 
         Node targetNode = path[0];
+        Node nextNode = null; // will be used in checking if the node above is blocked by the platoform
         Vector3 targetPos = targetNode.transform.position;
 
         float extX = 0.5f;
@@ -159,10 +171,40 @@ public class NPC_Test : MonoBehaviour, IHittable
         // These vlaue will be acting as box around the nodes that counts as close enough
         // If NPC is 2x2 -> extX =1, extY =1 -> horizThres = 1, VetiThres = 1.2.
         //That means if the NPC is within 1 unit in X and 1.2 units in Y of the Node we will accept it as close enough to consume the node
-        float horizThreshold = Mathf.Max(extX * 1.0f, 0.5f); //Minimum sensible x tolerance
-        float vertThreshold = Mathf.Max(extY * 1.2f, 0.5f); // allow some Y tolerance
+        float horizThreshold = Mathf.Max(extX * 1.0f, 1.5f); //Minimum sensible x tolerance
+        float vertThreshold = Mathf.Max(extY * 1.2f, 1.5f); // allow some Y tolerance
 
         float direction = Mathf.Sign(targetPos.x - transform.position.x);
+
+        //Flip the Character
+        if (Mathf.Sign(direction) > 0)
+        {
+            transform.localScale = FacingDirection;
+
+        }
+        else
+        {
+            transform.localScale = new Vector2(-FacingDirection.x, FacingDirection.y);
+
+        }
+
+        if (isGrounded)
+        {
+            //-------------Horizontal Movement--------------
+            if (Mathf.Approximately(direction, 0f))
+            {
+                rb.velocity = new Vector2(0f, rb.velocity.y);
+            }
+            else
+            {
+                //Horizontal Movement
+                rb.AddForce(new Vector2(direction * Movespeed, 0));
+                
+            }
+
+        }
+
+        // Making a slight force in x so that the NPC keeps moving while it jumps
         if (Mathf.Approximately(direction, 0f))
         {
             rb.velocity = new Vector2(0f, rb.velocity.y);
@@ -170,30 +212,49 @@ public class NPC_Test : MonoBehaviour, IHittable
         else
         {
             //Horizontal Movement
-            rb.AddForce(new Vector2(direction * Movespeed, rb.velocity.y));
+            rb.AddForce(new Vector2(direction * 9f, 0));
+
         }
 
-        //Flip the Character
-        if (Mathf.Sign(direction) > 0)
+        //----------Check if next node is straight above but its blocked----------
+        if (path.Count > 1)
         {
-            transform.localScale = FacingDirection;
-            isFlipping = true;
+            nextNode = path[1];
+            
         }
-        else
+        if (nextNode != null)
         {
-            transform.localScale = new Vector2(-FacingDirection.x, FacingDirection.y);
-            isFlipping = true;
-        }
-        
-        if(isFlipping)
-        {
-            Dust.Play();
-        }
+            Vector2 dirToNode = (nextNode.transform.position - transform.position).normalized;
+            bool isAbove = dirToNode.y > 0.8f;
 
-        //jump Logic:
+            if (isAbove)
+            {
+                Vector3 nextNodePos = nextNode.transform.position;
+                RaycastHit2D hit = Physics2D.Linecast(transform.position,nextNodePos, platformLayer);
+                Debug.DrawLine(transform.position, nextNodePos, hit.collider != null ? Color.red : Color.blue, 0.2f);
 
+                if (hit.collider != null)
+                {
+                    //Add a little force to the NPC to move little bit so that i dont keep jumping in same position
+                    float dirX = Mathf.Sign(nextNode.transform.position.x - transform.position.x);
+                    rb.AddForce(new Vector2(dirX * 5f * 0.5f, 0), ForceMode2D.Impulse);
+
+                    //Recalculate the Path to edgeNode near NPC
+                    Node NPCEdgeNode = GetNearestEdgeNode(transform.position);
+                    var newPath = AStarManager.instance.GeneratePath(currentNode, NPCEdgeNode);
+                    if (newPath != null && newPath.Count > 0)
+                    {
+                        path.Clear();
+                        path.AddRange(newPath);
+                        if (debugLogs) Debug.Log($"PathUpdater: Rebuilt path to predicted node ({path.Count})");
+                    }
+                }
+            }
+        }
+       
         if (isGrounded)
         {
+            //-----------jump Logic--------------:
             float dx = targetPos.x - transform.position.x;
             float dy = targetPos.y - transform.position.y;
 
@@ -201,13 +262,13 @@ public class NPC_Test : MonoBehaviour, IHittable
             Debug.Log(gravity);
 
             //Clamp minimum jump height to required number of tile
-            float minJumpHeight = 3.0f;
-            float maxJumpHeight = 35f;
+            float minJumpHeight = 4.0f;
+            float maxJumpHeight = 60f;
 
             if ((dy > 1.5f || (Mathf.Abs(dy) < 0.2f && Mathf.Abs(dx) > 2f)) && isGrounded)
             {
 
-                float jumpHeight = Mathf.Max(minJumpHeight, dy);
+                float jumpHeight = Mathf.Clamp(dy + minJumpHeight, minJumpHeight, maxJumpHeight);
 
                 //calculate minimum vertical velocity needed to reach by
                 float requiredVy = Mathf.Sqrt(2 * gravity * jumpHeight); //margin 
@@ -215,16 +276,46 @@ public class NPC_Test : MonoBehaviour, IHittable
                 float flightTime = (2 * requiredVy) / gravity;// total Flight Time = (2 * vY) / g
 
                 // Horizontal velocity to cover dx in that time
-                float requiredVX = dx / flightTime;
+                float requiredVX = dx / flightTime * 3f;
                 requiredVX = Mathf.Clamp(requiredVX, -Movespeed * 1.5f, Movespeed * 1.5f);
 
-                //Apply Jump with calculated trajectory
-                rb.velocity = new Vector2(requiredVX, requiredVy);
+               // Reset velocity to avoid old momentum interfering
+                rb.velocity = Vector2.zero;
+
+                // Apply one precise jump impulse
+                rb.AddForce(new Vector2(requiredVX, requiredVy) * rb.mass, ForceMode2D.Impulse);
+
                 Chaser_Animator.SetTrigger("Jump");
                 Dust.Play();
+
+                //Jumping across the platform
+                if (!noPlatformxMax || !noPlatformxMin)
+                {
+                    if(path.Count > 1)
+                    {
+                        float verticalDifference = nextNode.transform.position.y - transform.position.y;
+
+                        float jumpthreshold = 1f;
+
+                        if (Mathf.Abs(verticalDifference) <= jumpthreshold)
+                        {
+                            rb.velocity = new Vector2(requiredVX, requiredVy);
+                        }
+                        else if (verticalDifference > 0)
+                        {
+                            rb.velocity = new Vector2(requiredVX, requiredVy);
+                        }
+                        else if(verticalDifference < jumpthreshold)
+                        {
+                            rb.velocity = new Vector2(requiredVX, requiredVy);
+                        }
+                    }
+                }
             }
+
+           
         }
-        
+
         // Near Node check 
         bool closeEnoughX = Mathf.Abs(transform.position.x - targetPos.x) <= horizThreshold;
         bool closeEnoughY = Mathf.Abs(transform.position.y - targetPos.y) <= (vertThreshold * 2f);
@@ -255,12 +346,12 @@ public class NPC_Test : MonoBehaviour, IHittable
 
         if (path.Count > 1 && Physics2D.Linecast(transform.position, targetPos, platformLayer))
         {
-            Node nextNode = path[1];
-            if (Vector2.Distance(transform.position, nextNode.transform.position) < Vector2.Distance(transform.position, targetNode.transform.position))
+            Node thenextNode = path[1];
+            if (Vector2.Distance(transform.position, thenextNode.transform.position) < Vector2.Distance(transform.position, targetNode.transform.position))
             {
                 //skip ahead
                 path.RemoveAt(0);
-                targetNode = nextNode;
+                targetNode = thenextNode;
             }
         }
     }
@@ -285,6 +376,25 @@ public class NPC_Test : MonoBehaviour, IHittable
         return nearestNode;
     }
 
+    Node GetNearestEdgeNode(Vector3 Pos)
+    {
+        Node nearestEdgeNode = null;
+
+        float shortest = float.MaxValue;
+        foreach(var node in AllEdgeNodesinTheScene)
+        {
+            float distance = (Pos - node.transform.position).sqrMagnitude;
+
+            if(distance < shortest)
+            {
+                shortest = distance; 
+                nearestEdgeNode = node;
+            }
+        }
+
+        return nearestEdgeNode;
+    }
+
     void OnDrawGizmos()
     {
         if (!Application.isPlaying) return;
@@ -306,7 +416,11 @@ public class NPC_Test : MonoBehaviour, IHittable
         }
         else
         {
-            Chaser_Animator.SetBool("IsStartedMoving", true);
+            if (Mathf.Abs(rb.velocity.x) > 2 && isGrounded)
+            {
+                Chaser_Animator.SetBool("IsStartedMoving", true);
+                Dust.Play();
+            }  
         }
 
         if(!isGrounded)
@@ -317,11 +431,27 @@ public class NPC_Test : MonoBehaviour, IHittable
         {
             if (!wasGrounded)
             {
+                
                 Chaser_Animator.SetTrigger("Landed");
             }
-            Chaser_Animator.SetBool("inAir", false);
+            else
+                Chaser_Animator.SetBool("inAir", false);
         }
         wasGrounded = isGrounded;
+    }
+
+    void groundedAndplatformCheck()
+    {
+        isGrounded = Physics2D.Raycast(transform.position, Vector2.down, 1.1f, platformLayer);
+        Debug.DrawLine(transform.position, transform.position + Vector3.down * 1.1f, Color.white);
+
+        Vector2 JumpOffsetOriginXMax = new Vector2(transform.position.x + 0.5f, NPCcollider.bounds.min.y);
+        Vector2 jumpOffOriginXMin = new Vector2(transform.position.x - 0.5f, NPCcollider.bounds.min.y);
+        noPlatformxMax = Physics2D.Raycast(JumpOffsetOriginXMax, Vector2.down, 1.1f, platformLayer);
+        noPlatformxMin = Physics2D.Raycast(jumpOffOriginXMin, Vector2.down, 1.1f, platformLayer);
+
+        Debug.DrawLine(JumpOffsetOriginXMax, JumpOffsetOriginXMax + Vector2.down * 1.1f, Color.magenta);
+        Debug.DrawLine(jumpOffOriginXMin, jumpOffOriginXMin + Vector2.down * 1.1f, Color.magenta);
     }
 
 }
