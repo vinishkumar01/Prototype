@@ -36,6 +36,18 @@ public class BulletTracer : MonoBehaviour
 
     void Update()
     {
+        if(!hasHit && storedHit.collider != null)
+        {
+            var hittable = storedHit.collider.GetComponent<IHittable>();
+
+            if(hittable != null)
+            {
+                _targetposition = new Vector3(storedHit.collider.transform.position.x, storedHit.collider.transform.position.y, -1);
+                _distance = Vector3.Distance(_startposition, _targetposition);
+            }
+            
+        }
+        
         progress += (_speed * Time.deltaTime) / _distance;
         transform.position = Vector3.Lerp(_startposition, _targetposition, progress);
 
@@ -51,6 +63,7 @@ public class BulletTracer : MonoBehaviour
                 if (hittable != null)
                 {
                     hittable.RecieveHit(storedHit);
+                    StartCoroutine(DisableWhenHit());
                 }
             }
 
