@@ -22,12 +22,12 @@ TagManager:
   - UI
   - Platform
   - Rope
-  - Player and Enemy
+  - 'Player '
   - BulletHittableLayer
   - BackGround
-  - 
-  - 
-  - 
+  - Enemy
+  - Bullet
+  - Gun
   - 
   - 
   - 
@@ -61,4 +61,7 @@ TagManager:
     locked: 0
   - name: Enemy
     uniqueID: 1734499553
+    locked: 0
+  - name: Bullet
+    uniqueID: 2437110621
     locked: 0
