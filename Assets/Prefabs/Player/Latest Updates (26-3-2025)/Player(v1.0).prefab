@@ -7380,7 +7380,7 @@ SpringJoint2D:
   m_Anchor: {x: 0, y: 0}
   m_ConnectedAnchor: {x: 7.88, y: -3.07}
   m_AutoConfigureDistance: 1
-  m_Distance: 7.3371606
+  m_Distance: 7.311019
   m_DampingRatio: 1
   m_Frequency: 1
 --- !u!114 &3380033075483046487
@@ -7412,9 +7412,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   <CurrentHealth>k__BackingField: 0
-  _knockBack: {fileID: 0}
-  _flashEffect: {fileID: 0}
-  _gunHolder: {fileID: 4047210313481608318}
   _fullScreenEffectController: {fileID: 0}
   _shockWaveScreen: {fileID: 7010886487849150951, guid: 8ce71f4a8edff8342815a7c2db0d7f8c, type: 3}
   _pistolAttributes: {fileID: 11400000, guid: 0845abbfcd1863d4b947ae986c50633e, type: 2}
@@ -7422,6 +7419,9 @@ MonoBehaviour:
   _pistol: {fileID: 1484560809256802160}
   _rifle: {fileID: 6155939406730506496}
   _dust: {fileID: 2097764186031612756}
+  _knockBack: {fileID: 0}
+  _flashEffect: {fileID: 0}
+  _gunHolder: {fileID: 4047210313481608318}
   _audioSource: {fileID: 5952926899266242641}
   _slideSoundClip: {fileID: 8300000, guid: 25957f304a3e8bb419fc500f19536ddd, type: 3}
   _jumpSoundClip: {fileID: 8300000, guid: f8ce98ef9afead14ca36ba1cae064f6c, type: 3}
@@ -7553,7 +7553,7 @@ MonoBehaviour:
   - {x: 0.50827336, y: -0.66984826, z: 0}
   m_ShapePathHash: 752698669
   m_Mesh: {fileID: 0}
-  m_InstanceId: 38454
+  m_InstanceId: -237330
   m_LocalBounds:
     m_Center: {x: 0.00010877848, y: -0.056918323, z: 0}
     m_Extent: {x: 0.55650276, y: 0.61292994, z: 0}

@@ -13,19 +13,19 @@ public class Player : MonoBehaviour, IPlayerDamageable, IUpdateObserver, IFixedU
     [Header("References")]
     private HealthBar _healthBar;
     private TextMeshPro _healthText;
-    [HideInInspector] public KnockBack _knockBack;
-    [HideInInspector] public PlayerFlashAndDissolveEffect _flashEffect;
     private PlayerDeadParticlesInitiation _deadParticlesInitiation;
-    [SerializeField] private GameObject _gunHolder;
     private GunAiming _gunAiming;
     [SerializeField] private FullScreenEffectController _fullScreenEffectController;
-    [SerializeField] public GameObject _shockWaveScreen;
+    public GameObject _shockWaveScreen;
     [SerializeField] private WeaponSO _pistolAttributes;
     [SerializeField] private WeaponSO _rifleAttributes;
     [SerializeField] private Pistol _pistol;
     [SerializeField] private Rifle _rifle;
     //dust effect
     public ParticleSystem _dust;
+    [HideInInspector] public KnockBack _knockBack;
+    [HideInInspector] public PlayerFlashAndDissolveEffect _flashEffect;
+    [SerializeField] private GameObject _gunHolder;
 
 
     [Header("player SFX")]
@@ -135,6 +135,7 @@ public class Player : MonoBehaviour, IPlayerDamageable, IUpdateObserver, IFixedU
         _audioSource.Stop();
     }
 
+    //Check if the gun and visual is present with gameObject(player)
     private void CheckIfGunisPresentWithPlayer()
     { 
         if (!_gunHolder.activeInHierarchy)

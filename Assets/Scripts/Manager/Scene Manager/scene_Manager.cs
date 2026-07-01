@@ -159,6 +159,8 @@ public class scene_Manager : MonoBehaviour
         //PlayerPrefs.SetString("NextScene", selectedScene);
         SceneLoader.NextSceneName = selectedScene;
         SceneManager.LoadScene(_loadingSceneName);
+
+
     }
 
     public void OnTutorialButtonPressed()

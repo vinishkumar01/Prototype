@@ -29,7 +29,7 @@ public class PlayerDashState : PlayerState
             //if the cooldown isnt finished -> go back to grounded/ air state
 
             //if/else if/ if ternary operator
-            //first it checks if the player is grounded if no -> then changes to player jump state, if yes -> then it comes to check the middle condition check if button pressed for hmovement if yes -> state changes to Move else changes to idle state
+            //first it checks if the player is grounded if no -> then changes to player jump state, if yes(grounded) -> then it comes to check the middle condition check if button pressed for movement if yes -> state changes to Move or else changes to idle state
 
             _playerStateMachine.ChangeState(_player._isGrounded ? (Mathf.Abs(_player.MovementInputXDirection) > 0.01f ? _player._playerMoveState : _player._playerIdleState) : _player._playerJumpState);
             return;

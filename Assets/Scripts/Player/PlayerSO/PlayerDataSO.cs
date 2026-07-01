@@ -37,7 +37,7 @@ public class PlayerDataSO : ScriptableObject
     [Header("Jump Buffer")]
     public float jumpBufferTime = 0.5f;
 
-    [Header("Player Move State Variables")]
+    //Player Move State Variables
     [Header("Movement Configs")]
     public float movementSpeed = 16f;
     public float maxMovementSpeed = 16f;
@@ -45,7 +45,7 @@ public class PlayerDataSO : ScriptableObject
     public float accelerationTimeGround = 0.1f;
     public float ropeSwingForce = 8f;
 
-    [Header("Player Jump State Variables")]
+    //Player Jump State Variables
     [Header("Double Jump")]
     public float doubleJumpForce = 25f;
     public int doubleJumpCount = 0;
@@ -55,15 +55,19 @@ public class PlayerDataSO : ScriptableObject
     public float accelerationTimeAir = 0.15f;
     public float ropeSwingForceInJump = 8f;
 
+    //Player Dash State variables
     [Header("Player Dash")]
     public float dashTime = 0.2f;
     public float dashSpeed = 50f;
     public float dashCoolDown = 2.5f;
     public int dashCount = 0;
 
+    //Grapple Ammo variable
     [Header("Grapple Gun")]
     public int _grappleAmmo = 0;
 
+
+    //Player Power Up variables
     [Header("Power Up")]
     public bool doubleJumpSkill = false;
     public bool dashSkill = false;
