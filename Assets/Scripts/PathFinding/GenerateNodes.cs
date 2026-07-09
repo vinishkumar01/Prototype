@@ -20,7 +20,6 @@ public class GenerateNodes : MonoBehaviour
     [Header("Nodes")]
     [SerializeField] public List<Node> nodeList;
     [SerializeField] public List<Node> EdgeNodes;
-    [SerializeField] public List<Node> CombinedNodes;
     bool canDrawGizmos;
 
     [Header("Node Types")]
@@ -31,8 +30,8 @@ public class GenerateNodes : MonoBehaviour
 
     [Header("Node Count Var")]
     int walkableNodeCount = 0;
-    int REdgeNodeCount = 0;
-    int LEdgeNodeCount = 0;
+    int RightEdgeNodeCount = 0;
+    int LeftEdgeNodeCount = 0;
     
     private void Awake()
     {
@@ -78,8 +77,8 @@ public class GenerateNodes : MonoBehaviour
                         {
                             Vector3 rightPos = platformTM.GetCellCenterWorld(aboveCell) + new Vector3(1f, 0, 0);
                             Node RightNode = PoolManager.SpawnObject(NodePrefab, rightPos, Quaternion.identity, PoolManager.PoolType.Nodes);
-                            RightNode.name = "RightEdgeNode " + "_ " + REdgeNodeCount.ToString();
-                            REdgeNodeCount++;
+                            RightNode.name = "RightEdgeNode " + "_ " + RightEdgeNodeCount.ToString();
+                            RightEdgeNodeCount++;
                             EdgeNodes.Add(RightNode);
                         }
 
@@ -87,8 +86,8 @@ public class GenerateNodes : MonoBehaviour
                         {
                             Vector3 leftPos = platformTM.GetCellCenterWorld(aboveCell) + new Vector3(-1f, 0, 0);
                             Node LeftNode = PoolManager.SpawnObject(NodePrefab, leftPos, Quaternion.identity, PoolManager.PoolType.Nodes);
-                            LeftNode.name = "LeftEdgeNode " + "_ " + LEdgeNodeCount.ToString();
-                            LEdgeNodeCount++;
+                            LeftNode.name = "LeftEdgeNode " + "_ " + LeftEdgeNodeCount.ToString();
+                            LeftEdgeNodeCount++;
                             EdgeNodes.Add(LeftNode);
                         }
                     }

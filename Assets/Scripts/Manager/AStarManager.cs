@@ -26,7 +26,7 @@ public class AStarManager : MonoBehaviour
         GenerateNodes.OnNodesGenerated -= CollectNodesData;
     }
 
-
+    //Now we can begin with the algorithm
     public List<Node> GeneratePath(Node start, Node End)
     {
         if (start == null || End == null) return new List<Node>();         
@@ -50,7 +50,6 @@ public class AStarManager : MonoBehaviour
         //Now we add the Start Node to the OpenSet
         List<Node> OpenSet = new List<Node> { start };
 
-        //Now we can begin with the algorithm
         while(OpenSet.Count > 0)
         {
             int LowestF = default;

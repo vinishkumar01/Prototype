@@ -17,6 +17,7 @@ public class PlayerIdleState : PlayerState
     public override void EnterState()
     {
         base.EnterState();
+        //Applying linear Drag because as we switch state from move state to idle state because of the smoothDamp we are applying to the player to move makes the player keep on sliding so that we are applying this drag
         _player.RB.drag = 5f;
         _player._animator.SetBool("isIdle", true);
 
